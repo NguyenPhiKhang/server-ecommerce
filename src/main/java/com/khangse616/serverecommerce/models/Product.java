@@ -65,7 +65,6 @@ public class Product implements Serializable {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rating_star_id")
-    @JsonIgnore
     private RatingStar ratingStar;
 
 
