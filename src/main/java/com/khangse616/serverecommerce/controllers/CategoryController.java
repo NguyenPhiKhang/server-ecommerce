@@ -1,12 +1,14 @@
 package com.khangse616.serverecommerce.controllers;
 
-import com.khangse616.serverecommerce.models.Category;
+import com.khangse616.serverecommerce.dto.CategoryScreenDTO;
+import com.khangse616.serverecommerce.mapper.CategoryScreenDTOMapper;
 import com.khangse616.serverecommerce.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -15,12 +17,14 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @GetMapping("/categories")
-    private ResponseEntity<List<Category>> getCategoriesLevel1(@RequestParam("level") int level){
-        return ResponseEntity.ok().body(categoryService.findCategoryByLevel(level));
+    private ResponseEntity<List<CategoryScreenDTO>> getCategoriesLevel1(@RequestParam("level") int level){
+        List<CategoryScreenDTO> categoryScreenDTO = categoryService.findCategoryByLevel(level).stream().map(value->new CategoryScreenDTOMapper().mapRow(value)).collect(Collectors.toList());
+        return ResponseEntity.ok().body(categoryScreenDTO);
     }
 
     @GetMapping("/categories/{parentId}/sub-categories")
-    private ResponseEntity<List<Category>> getCategoriesByParentCategory(@PathVariable("parentId") int parentId){
-        return ResponseEntity.ok().body(categoryService.findCategoryByParentCategory(parentId));
+    private ResponseEntity<List<CategoryScreenDTO>> getCategoriesByParentCategory(@PathVariable("parentId") int parentId){
+        List<CategoryScreenDTO> categoryScreenDTO = categoryService.findCategoryByParentCategory(parentId).stream().map(value->new CategoryScreenDTOMapper().mapRow(value)).collect(Collectors.toList());
+        return ResponseEntity.ok().body(categoryScreenDTO);
     }
 }
