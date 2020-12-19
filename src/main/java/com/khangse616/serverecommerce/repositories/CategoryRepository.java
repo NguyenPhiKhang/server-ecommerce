@@ -19,5 +19,8 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
 //    @Query("select c.products from Category c where c.categoryPath=:path")
 //    List<Product> findNProduct(@Param("path") String path, Pageable pageable);
 
-    Category findFirstByCategoryPath(String path);
+    List<Category> findByLevel(int level);
+    @Query(value = "select * from categories where parent_id=:parentId",nativeQuery = true)
+    List<Category> findByParentId(@Param("parentId") int parentId);
+
 }
