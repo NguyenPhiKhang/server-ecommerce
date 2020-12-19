@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 public class ProductItemDTO {
     private int id;
     private String name;
-    private int admin_id;
+    private int adminId;
     private boolean event;
     private String category;
     private boolean freeShip;
@@ -17,14 +17,67 @@ public class ProductItemDTO {
     private int promotionPercent;
     private BigDecimal finalPrice;
     private int orderCount;
-    private Image imgUrl;
+    private String imgUrl;
+    private int shopId;
+    private String shopName;
+    private String shopWarehouseCity;
+    private float percentStar;
+    private int countRating;
+
+    public ProductItemDTO() {
+    }
+
+    @JsonProperty("shop_id")
+    public int getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(int shopId) {
+        this.shopId = shopId;
+    }
+
+    @JsonProperty("shop_name")
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
+    }
+
+    @JsonProperty("shop_warehouse_city")
+    public String getShopWarehouseCity() {
+        return shopWarehouseCity;
+    }
+
+    public void setShopWarehouseCity(String shopWarehouseCity) {
+        this.shopWarehouseCity = shopWarehouseCity;
+    }
+
+    @JsonProperty("percent_star")
+    public float getPercentStar() {
+        return percentStar;
+    }
+
+    public void setPercentStar(float percentStar) {
+        this.percentStar = percentStar;
+    }
+
+    @JsonProperty("count_rating")
+    public int getCountRating() {
+        return countRating;
+    }
+
+    public void setCountRating(int countRating) {
+        this.countRating = countRating;
+    }
 
     @JsonProperty("img_url")
-    public Image getImgUrl() {
+    public String getImgUrl() {
         return imgUrl;
     }
 
-    public void setImgUrl(Image imgUrl) {
+    public void setImgUrl(String imgUrl) {
         this.imgUrl = imgUrl;
     }
 
@@ -53,12 +106,12 @@ public class ProductItemDTO {
         this.name = name;
     }
 
-    public int getAdmin_id() {
-        return admin_id;
+    public int getAdminId() {
+        return adminId;
     }
 
-    public void setAdmin_id(int admin_id) {
-        this.admin_id = admin_id;
+    public void setAdminId(int adminId) {
+        this.adminId = adminId;
     }
 
     @JsonProperty("is_event")
