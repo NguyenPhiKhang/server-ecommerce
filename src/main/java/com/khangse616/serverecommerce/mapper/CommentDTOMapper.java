@@ -3,6 +3,7 @@ package com.khangse616.serverecommerce.mapper;
 import com.khangse616.serverecommerce.dto.CommentDTO;
 import com.khangse616.serverecommerce.models.Comment;
 import com.khangse616.serverecommerce.models.User;
+import com.khangse616.serverecommerce.utils.ImageUtil;
 
 public class CommentDTOMapper implements RowMapper<CommentDTO, Comment> {
     @Override
@@ -14,7 +15,7 @@ public class CommentDTOMapper implements RowMapper<CommentDTO, Comment> {
             User user = comment.getUser();
             commentDTO.setCustomerId(user.getId());
             commentDTO.setCustomerName(user.getName());
-            commentDTO.setCustomerLogo(user.getImageAvatar().getLink());
+            commentDTO.setCustomerLogo( ImageUtil.addressImage(user.getImageAvatar().getId()));
             commentDTO.setData(comment.getData());
             commentDTO.setShop(user.isShop());
             commentDTO.setTimeCreated(comment.getTimeCreated());

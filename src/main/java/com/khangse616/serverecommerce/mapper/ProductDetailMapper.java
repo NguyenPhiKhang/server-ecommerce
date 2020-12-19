@@ -2,6 +2,7 @@ package com.khangse616.serverecommerce.mapper;
 
 import com.khangse616.serverecommerce.dto.*;
 import com.khangse616.serverecommerce.models.*;
+import com.khangse616.serverecommerce.utils.ImageUtil;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.ArrayList;
@@ -35,8 +36,8 @@ public class ProductDetailMapper implements RowMapper<ProductDetailDTO, Product>
             productDetailDTO.setSku(product.getSku());
             productDetailDTO.setSkuUser(product.getSkuUser());
             productDetailDTO.setRatingStar(product.getRatingStar());
-            productDetailDTO.setImages(product.getImages().stream().map(image -> ServletUriComponentsBuilder
-                    .fromCurrentContextPath().path("/api/v1/images/").path(image.getId()).toUriString()).collect(Collectors.toList()));
+            productDetailDTO.setImages(product.getImages().stream().map(image -> ImageUtil.addressImage(image.getId()))
+                    .collect(Collectors.toList()));
             List<AttributeProductDTO> attributeProductDTOList = new ArrayList<>();
 
             for (Option option: product.getOptions()){
