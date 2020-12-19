@@ -17,8 +17,9 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @GetMapping("/categories")
-    private ResponseEntity<List<CategoryScreenDTO>> getCategoriesLevel1(@RequestParam("level") int level){
-        List<CategoryScreenDTO> categoryScreenDTO = categoryService.findCategoryByLevel(level).stream().map(value->new CategoryScreenDTOMapper().mapRow(value)).collect(Collectors.toList());
+    private ResponseEntity<List<CategoryScreenDTO>> getCategoriesLevel1(@RequestParam(value = "level", required = false, defaultValue = "0") int level){
+        List<CategoryScreenDTO> categoryScreenDTO = level!=0?categoryService.findCategoryByLevel(level).stream().map(value->new CategoryScreenDTOMapper().mapRow(value)).collect(Collectors.toList())
+                : categoryService.findAllCategories().stream().map(value->new CategoryScreenDTOMapper().mapRow(value)).collect(Collectors.toList());
         return ResponseEntity.ok().body(categoryScreenDTO);
     }
 
