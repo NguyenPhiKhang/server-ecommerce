@@ -1,5 +1,7 @@
 package com.khangse616.serverecommerce.controllers;
 
+import com.khangse616.serverecommerce.dto.ProductDetailDTO;
+import com.khangse616.serverecommerce.mapper.ProductDetailMapper;
 import com.khangse616.serverecommerce.models.Product;
 import com.khangse616.serverecommerce.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +18,8 @@ public class ProductController {
     private ProductService productService;
 
     @GetMapping("/product/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable int id) {
-        return ResponseEntity.ok().body(productService.findProductById(id));
+    public ResponseEntity<ProductDetailDTO> getProductById(@PathVariable int id) {
+        ProductDetailDTO productDetailDTO = new ProductDetailMapper().mapRow(productService.findProductById(id));
+        return ResponseEntity.ok().body(productDetailDTO);
     }
 }

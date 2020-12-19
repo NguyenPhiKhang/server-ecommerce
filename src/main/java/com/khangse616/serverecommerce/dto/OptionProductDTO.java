@@ -11,6 +11,9 @@ public class OptionProductDTO {
         this.value = value;
     }
 
+    public OptionProductDTO() {
+    }
+
     @JsonProperty("option_id")
     public int getId() {
         return id;

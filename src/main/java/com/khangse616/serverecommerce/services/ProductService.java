@@ -1,5 +1,6 @@
 package com.khangse616.serverecommerce.services;
 
+import com.khangse616.serverecommerce.dto.ProductDetailDTO;
 import com.khangse616.serverecommerce.models.Product;
 import com.khangse616.serverecommerce.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;

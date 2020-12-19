@@ -1,21 +1,15 @@
 package com.khangse616.serverecommerce.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.khangse616.serverecommerce.models.*;
-
-import javax.persistence.*;
 import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class ProductDetailDTO {
     private int id;
     private String name;
-    private int admin_id;
+    private int adminId;
     private boolean event;
     private String category;
     private boolean freeShip;
@@ -261,12 +255,13 @@ public class ProductDetailDTO {
         this.name = name;
     }
 
-    public int getAdmin_id() {
-        return admin_id;
+    @JsonProperty("admin_id")
+    public int getAdminId() {
+        return adminId;
     }
 
-    public void setAdmin_id(int admin_id) {
-        this.admin_id = admin_id;
+    public void setAdminId(int adminId) {
+        this.adminId = adminId;
     }
 
     @JsonProperty("is_free_ship")

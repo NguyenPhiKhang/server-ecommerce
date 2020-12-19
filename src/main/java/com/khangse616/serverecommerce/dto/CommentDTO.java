@@ -15,7 +15,7 @@ public class CommentDTO {
     private boolean isShop;
     private Timestamp timeCreated;
     private Timestamp timeUpdated;
-    private List<CommentDTO> subComment;
+//    private List<CommentDTO> subComment;
 
     public String getId() {
         return id;
@@ -96,12 +96,12 @@ public class CommentDTO {
         this.timeUpdated = timeUpdated;
     }
 
-    @JsonProperty("sub")
-    public List<CommentDTO> getSubComment() {
-        return subComment;
-    }
-
-    public void setSubComment(List<CommentDTO> subComment) {
-        this.subComment = subComment;
-    }
+//    @JsonProperty("sub")
+//    public List<CommentDTO> getSubComment() {
+//        return subComment;
+//    }
+//
+//    public void setSubComment(List<CommentDTO> subComment) {
+//        this.subComment = subComment;
+//    }
 }

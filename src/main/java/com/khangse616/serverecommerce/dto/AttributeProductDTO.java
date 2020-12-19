@@ -9,6 +9,9 @@ public class AttributeProductDTO {
     private String name;
     private List<OptionProductDTO> value;
 
+    public AttributeProductDTO() {
+    }
+
     public AttributeProductDTO(int id, String name, List<OptionProductDTO> value) {
         this.id = id;
         this.name = name;
@@ -39,4 +42,6 @@ public class AttributeProductDTO {
     public void setValue(List<OptionProductDTO> value) {
         this.value = value;
     }
+
+    public void addValue(OptionProductDTO value){this.value.add(value);}
 }
