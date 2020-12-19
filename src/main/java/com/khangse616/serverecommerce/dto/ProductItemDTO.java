@@ -90,6 +90,7 @@ public class ProductItemDTO {
         this.orderCount = orderCount;
     }
 
+    @JsonProperty("product_id")
     public int getId() {
         return id;
     }

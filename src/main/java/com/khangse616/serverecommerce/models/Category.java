@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.springframework.data.domain.PageRequest;
 
 import javax.persistence.*;
 import java.io.Serializable;
