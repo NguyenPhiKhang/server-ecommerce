@@ -15,7 +15,8 @@ public class CommentDTOMapper implements RowMapper<CommentDTO, Comment> {
             User user = comment.getUser();
             commentDTO.setCustomerId(user.getId());
             commentDTO.setCustomerName(user.getName());
-            commentDTO.setCustomerLogo( ImageUtil.addressImage(user.getImageAvatar().getId()));
+//            commentDTO.setCustomerLogo( ImageUtil.addressImage(user.getImageAvatar().getId()));
+            commentDTO.setCustomerLogo(user.getImageAvatar().getLink());
             commentDTO.setData(comment.getData());
             commentDTO.setShop(user.isShop());
             commentDTO.setTimeCreated(comment.getTimeCreated());

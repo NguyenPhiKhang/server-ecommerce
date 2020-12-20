@@ -14,8 +14,9 @@ public class RatingDTOMapper implements RowMapper<RatingDTO, Rating> {
             ratingDTO.setComment(rating.getComment());
             User user = rating.getUser();
             ratingDTO.setCustomerId(user.getId());
-            ratingDTO.setImage( ImageUtil.addressImage(user.getImageAvatar().getId()));
+//            ratingDTO.setImage( ImageUtil.addressImage(user.getImageAvatar().getId()));
             ratingDTO.setStar(rating.getStar());
+            ratingDTO.setImage(user.getImageAvatar().getLink());
             ratingDTO.setTimeUpdated(rating.getTimeUpdated());
             ratingDTO.setUserName(user.getName());
 
