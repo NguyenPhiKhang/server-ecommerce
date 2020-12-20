@@ -36,8 +36,9 @@ public class ProductDetailMapper implements RowMapper<ProductDetailDTO, Product>
             productDetailDTO.setSku(product.getSku());
             productDetailDTO.setSkuUser(product.getSkuUser());
             productDetailDTO.setRatingStar(product.getRatingStar());
-            productDetailDTO.setImages(product.getImages().stream().map(image -> ImageUtil.addressImage(image.getId()))
-                    .collect(Collectors.toList()));
+//            productDetailDTO.setImages(product.getImages().stream().map(image -> ImageUtil.addressImage(image.getId()))
+//                    .collect(Collectors.toList()));
+            productDetailDTO.setImages(product.getImages().stream().map(Image::getLink).collect(Collectors.toList()));
             List<AttributeProductDTO> attributeProductDTOList = new ArrayList<>();
 
             for (Option option: product.getOptions()){

@@ -12,7 +12,8 @@ public class ShopDTOMapper implements RowMapper<ShopDTO, Shop> {
             shopDTO.setId(shop.getId());
             shopDTO.setCustomerIdOfShop(shop.getUser().getId());
             shopDTO.setShopName(shop.getName());
-            shopDTO.setShopLogo( ImageUtil.addressImage(shop.getLogo().getId()));
+//            shopDTO.setShopLogo( ImageUtil.addressImage(shop.getLogo().getId()));
+            shopDTO.setShopLogo(shop.getLogo().getLink());
             shopDTO.setGoodReviewPercent(shop.getGoodReviewPercent());
             shopDTO.setScore(shop.getScore());
             shopDTO.setPhoneNumber(shop.getPhoneNumber());

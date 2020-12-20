@@ -1,6 +1,7 @@
 package com.khangse616.serverecommerce.services;
 
 import com.khangse616.serverecommerce.dto.ProductDetailDTO;
+import com.khangse616.serverecommerce.exceptions.ResourceNotFoundException;
 import com.khangse616.serverecommerce.models.Product;
 import com.khangse616.serverecommerce.repositories.CategoryRepository;
 import com.khangse616.serverecommerce.repositories.ProductRepository;
@@ -22,7 +23,7 @@ public class ProductService {
     private CategoryRepository categoryRepository;
 
     public Product findProductById(int id) {
-        return productRepository.findById(id).get();
+        return productRepository.findById(id).orElseThrow(null);
     }
 
     public List<Product> findProductByCategory(String categoryPath, int page){

@@ -23,4 +23,14 @@ public class CategoryService {
     public List<Category> findAllCategories(){
         return categoryRepository.findAll();
     }
+
+    public void uploadIcon(int id, String iconId){
+        Category category = categoryRepository.findById(id).get();
+        category.setIcon(iconId);
+        categoryRepository.save(category);
+    }
+
+    public Category findCategoryByPath(String categoryPath){
+        return categoryRepository.findFirstByCategoryPathAndAndIconIsNull(categoryPath);
+    }
 }
