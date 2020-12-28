@@ -33,8 +33,7 @@ public class ProductController {
 
     @GetMapping("/recommend/top-rating")
     public ResponseEntity<List<ProductItemDTO>> getProductTopRating(@RequestParam("p") int page){
-        List<ProductItemDTO> list = null;
-        productService.productTopRating(page);
+        List<ProductItemDTO> list = productService.productTopRating((page - 1) * 10).stream().map(value -> new ProductItemDTOMapper().mapRow(value)).collect(Collectors.toList());
         return ResponseEntity.ok().body(list);
     }
 }

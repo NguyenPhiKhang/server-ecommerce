@@ -39,7 +39,6 @@ public class ProductService {
         float m = productRepository.calculateQuantile();
 //        System.out.println("m: "+ m);
 
-
-        return null;
+        return productRepository.topRatingProducts(m, C, page);
     }
 }
