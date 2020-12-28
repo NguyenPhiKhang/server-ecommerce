@@ -32,4 +32,14 @@ public class ProductService {
 
 //        Page<Product> products = (Page<Product>) categoryRepository.findFirstByCategoryPath(categoryPath).getProducts(PageRequest.of(page-1,20)));
     }
+
+    public List<Product> productTopRating(int page){
+        float C = productRepository.meanOfVoteAverage();
+//        System.out.println("C: "+ C);
+        float m = productRepository.calculateQuantile();
+//        System.out.println("m: "+ m);
+
+
+        return null;
+    }
 }
