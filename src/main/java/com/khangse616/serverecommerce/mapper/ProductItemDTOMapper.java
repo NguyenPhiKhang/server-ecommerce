@@ -30,13 +30,14 @@ public class ProductItemDTOMapper implements RowMapper<ProductItemDTO, Product> 
             productItemDTO.setShopId(shop.getId());
             productItemDTO.setShopName(shop.getName());
             productItemDTO.setShopWarehouseCity(shop.getWarehouseCity());
-            productItemDTO.setCountRating(product.getRatings().size());
+//            productItemDTO.setCountRating(product.getRatings().size());
             RatingStar ratingStar = product.getRatingStar();
             int totalStar = ratingStar.getStar1() + ratingStar.getStar2() + ratingStar.getStar3() + ratingStar.getStar4() + ratingStar.getStar5();
             float percentStar = totalStar > 0 ? (float) (ratingStar.getStar1() + ratingStar.getStar2() * 2 + ratingStar.getStar3() * 3 + ratingStar.getStar4() * 4 + ratingStar.getStar5() * 5)
                     / totalStar : 0;
             DecimalFormat decimalFormat = new DecimalFormat("#.##");
             productItemDTO.setPercentStar(Float.parseFloat(decimalFormat.format(percentStar)));
+            productItemDTO.setCountRating(totalStar);
             return productItemDTO;
         } catch (Exception ex) {
             return null;
