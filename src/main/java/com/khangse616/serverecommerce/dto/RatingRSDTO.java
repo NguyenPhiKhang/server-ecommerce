@@ -3,12 +3,15 @@ package com.khangse616.serverecommerce.dto;
 public class RatingRSDTO {
     private int userId;
     private int productId;
-    private int star;
+    private int value;
 
-    public RatingRSDTO(int userId, int productId, int star) {
+    public RatingRSDTO() {
+    }
+
+    public RatingRSDTO(int userId, int productId, int value) {
         this.userId = userId;
         this.productId = productId;
-        this.star = star;
+        this.value = value;
     }
 
     public int getUserId() {
@@ -27,11 +30,11 @@ public class RatingRSDTO {
         this.productId = productId;
     }
 
-    public int getStar() {
-        return star;
+    public int getValue() {
+        return value;
     }
 
-    public void setStar(int star) {
-        this.star = star;
+    public void setValue(int value) {
+        this.value = value;
     }
 }
