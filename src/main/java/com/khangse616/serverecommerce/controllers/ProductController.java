@@ -38,7 +38,6 @@ public class ProductController {
         return ResponseEntity.ok().body(list);
     }
 
-
     @GetMapping("/recommend/top-rating/{userId}")
     public ResponseEntity<List<ProductItemDTO>> getProductTopRating(@PathVariable("userId") int userId, @RequestParam(value = "p", defaultValue = "1") int page) {
         List<ProductItemDTO> list = new ArrayList<>();

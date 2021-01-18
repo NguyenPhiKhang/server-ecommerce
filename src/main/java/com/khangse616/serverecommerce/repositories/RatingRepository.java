@@ -1,7 +1,9 @@
 package com.khangse616.serverecommerce.repositories;
 
 import com.khangse616.serverecommerce.dto.RecommendSystem.AVGRatedProductDTO;
+import com.khangse616.serverecommerce.models.Product;
 import com.khangse616.serverecommerce.models.Rating;
+import com.khangse616.serverecommerce.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,8 @@ public interface RatingRepository extends JpaRepository<Rating, Integer> {
     int existsByUserId(@Param("uId") int userId);
 
     boolean existsById(int id);
+
+    boolean existsByUserAndProduct(User user, Product product);
 
     @Query(value = "select count(distinct user_id) from ratings", nativeQuery = true)
     int countDistinctAllUser();
