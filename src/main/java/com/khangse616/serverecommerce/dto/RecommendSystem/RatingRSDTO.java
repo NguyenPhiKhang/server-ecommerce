@@ -1,6 +1,4 @@
-package com.khangse616.serverecommerce.dto;
-
-import org.hibernate.internal.util.Cloneable;
+package com.khangse616.serverecommerce.dto.RecommendSystem;
 
 import java.util.Objects;
 

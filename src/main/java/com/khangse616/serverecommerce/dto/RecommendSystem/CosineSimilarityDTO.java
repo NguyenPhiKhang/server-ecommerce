@@ -13,6 +13,10 @@ public class CosineSimilarityDTO {
         this.column = column;
         this.similarity = similarity;
     }
+    public CosineSimilarityDTO(int row, int column) {
+        this.row = row;
+        this.column = column;
+    }
 
     public int getRow() {
         return row;

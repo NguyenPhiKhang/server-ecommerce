@@ -1,6 +1,6 @@
 package com.khangse616.serverecommerce.mapper;
 
-import com.khangse616.serverecommerce.dto.RatingRSDTO;
+import com.khangse616.serverecommerce.dto.RecommendSystem.RatingRSDTO;
 import com.khangse616.serverecommerce.models.Rating;
 
 public class RatingRSDTOMapper implements RowMapper<RatingRSDTO, Rating>{
