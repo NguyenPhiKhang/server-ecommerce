@@ -3,6 +3,7 @@ package com.khangse616.serverecommerce.controllers;
 import com.khangse616.serverecommerce.dto.ProductDetailDTO;
 import com.khangse616.serverecommerce.dto.ProductItemDTO;
 import com.khangse616.serverecommerce.dto.RatingRSDTO;
+import com.khangse616.serverecommerce.dto.RecommendSystem.AVGRatedProductDTO;
 import com.khangse616.serverecommerce.mapper.ProductDetailMapper;
 import com.khangse616.serverecommerce.mapper.ProductItemDTOMapper;
 import com.khangse616.serverecommerce.mapper.RatingDTOMapper;
@@ -14,10 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -46,13 +44,40 @@ public class ProductController {
         List<ProductItemDTO> list = new ArrayList<>();
         if (userId == 0 || !(ratingService.checkUserIsRated(userId) > 0))
             list = productService.productTopRating((page - 1) * 10).stream().map(value -> new ProductItemDTOMapper().mapRow(value)).collect(Collectors.toList());
-        else{
+        else {
             int n_users = ratingService.numberUserInRatings();
             int n_products = ratingService.numberProductInRatings();
 
             List<Integer> list_users = ratingService.getUsersRated();
-            List<Integer> list_product = ratingService.getProductsRated();
-            List<RatingRSDTO> listRatingRS = ratingService.getAll().stream().map(value->new RatingRSDTOMapper().mapRow(value)).collect(Collectors.toList());
+//            List<Integer> list_product = ratingService.getProductsRated();
+            List<RatingRSDTO> listRatingRS = ratingService.getAll().stream().map(value -> new RatingRSDTOMapper().mapRow(value)).collect(Collectors.toList());
+
+            List<RatingRSDTO> listRatingNormalized = listRatingRS.stream().map(rt -> new RatingRSDTO(rt.getUserId(), rt.getProductId(), rt.getValue())).collect(Collectors.toList());
+
+            HashMap<Integer, Float> list_avgProductRated = new HashMap<>();
+
+            List<AVGRatedProductDTO> listAVG = ratingService.calcAVGRatedProduct();
+
+            // normalized utility matrix
+            for (AVGRatedProductDTO product_avg : listAVG) {
+                for (int user_id : list_users) {
+                    int index = listRatingNormalized.indexOf(new RatingRSDTO(user_id, product_avg.getProductId()));
+                    if (index > -1) {
+                        RatingRSDTO rt = listRatingNormalized.get(index);
+                        rt.setValue(rt.getValue() - product_avg.getAvgRated());
+                    }
+                }
+            }
+
+            for(RatingRSDTO a: listRatingNormalized){
+                System.out.println(a);
+            }
+
+//            // calc cosine similarity
+//            for () {
+//
+//            }
+
         }
         return ResponseEntity.ok().body(list);
     }

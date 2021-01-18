@@ -1,5 +1,6 @@
 package com.khangse616.serverecommerce.services;
 
+import com.khangse616.serverecommerce.dto.RecommendSystem.AVGRatedProductDTO;
 import com.khangse616.serverecommerce.models.Rating;
 import com.khangse616.serverecommerce.repositories.RatingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +30,12 @@ public class RatingService {
     }
 
     public List<Rating> getAll(){
-        return ratingRepository.findAll();
+        return ratingRepository.findAllByOrderByProductAsc();
     }
 
     public List<Integer> getUsersRated(){return ratingRepository.findUsersRated();}
 
     public List<Integer> getProductsRated(){return ratingRepository.findProductsRated();}
+
+    public List<AVGRatedProductDTO> calcAVGRatedProduct(){return ratingRepository.avgRatedProduct();}
 }
