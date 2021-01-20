@@ -25,8 +25,8 @@ public class ProductItemDTOMapper implements RowMapper<ProductItemDTO, Product> 
             productItemDTO.setPromotionPercent(product.getPromotionPercent());
             productItemDTO.setFinalPrice(product.getFinalPrice());
             productItemDTO.setOrderCount(product.getOrderCount());
-//            productItemDTO.setImgUrl(ImageUtil.addressImage(product.getImgUrl().getId()));
-            productItemDTO.setImgUrl(product.getImgUrl().getLink());
+            productItemDTO.setImgUrl(ImageUtil.addressImage(product.getImgUrl().getId()));
+//            productItemDTO.setImgUrl(product.getImgUrl().getLink());
             productItemDTO.setShopId(shop.getId());
             productItemDTO.setShopName(shop.getName());
             productItemDTO.setShopWarehouseCity(shop.getWarehouseCity());

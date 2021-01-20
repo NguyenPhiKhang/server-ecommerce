@@ -6,6 +6,7 @@ import com.khangse616.serverecommerce.utils.ImageUtil;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,9 +37,9 @@ public class ProductDetailMapper implements RowMapper<ProductDetailDTO, Product>
             productDetailDTO.setSku(product.getSku());
             productDetailDTO.setSkuUser(product.getSkuUser());
             productDetailDTO.setRatingStar(product.getRatingStar());
-//            productDetailDTO.setImages(product.getImages().stream().map(image -> ImageUtil.addressImage(image.getId()))
-//                    .collect(Collectors.toList()));
-            productDetailDTO.setImages(product.getImages().stream().map(Image::getLink).collect(Collectors.toList()));
+            productDetailDTO.setImages(product.getImages().stream().map(image -> ImageUtil.addressImage(image.getId()))
+                    .collect(Collectors.toList()));
+//            productDetailDTO.setImages(product.getImages().stream().map(Image::getLink).collect(Collectors.toList()));
             List<AttributeProductDTO> attributeProductDTOList = new ArrayList<>();
 
             for (Option option: product.getOptions()){
@@ -75,7 +76,7 @@ public class ProductDetailMapper implements RowMapper<ProductDetailDTO, Product>
             ratingProductDTO.setTotalCount(product.getRatings().size());
             List<RatingDTO> ratingDTOList = new ArrayList<>();
 
-            for(Rating rating: product.getRatings()){
+            for(Rating rating: product.getRatings().stream().sorted(Comparator.comparing(Rating::getTimeUpdated)).limit(2).collect(Collectors.toList())){
                 RatingDTO ratingDTO = new RatingDTOMapper().mapRow(rating);
                 ratingDTOList.add(ratingDTO);
             }

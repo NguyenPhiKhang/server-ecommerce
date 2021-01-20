@@ -2,6 +2,7 @@ package com.khangse616.serverecommerce.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.hibernate.annotations.BatchSize;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -104,6 +105,7 @@ public class Product implements Serializable {
 
     @OneToMany(targetEntity = Rating.class, mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
+    @BatchSize(size = 2)
     private Set<Rating> ratings;
 
     @OneToOne(cascade=CascadeType.ALL, fetch = FetchType.LAZY)
