@@ -51,10 +51,17 @@ public class ProductController {
     @GetMapping("/recommend/top-rating/{userId}")
     public ResponseEntity<List<ProductItemDTO>> getProductTopRating(@PathVariable("userId") int userId, @RequestParam(value = "p", defaultValue = "1") int page) {
         long startTime = new Date().getTime();
-        List<ProductItemDTO> list = (userId == 0 || !(ratingService.checkUserIsRated(userId) > 0) ?
-                productService.productTopRating((page - 1) * 10).stream().map(value -> new ProductItemDTOMapper().mapRow(value)).collect(Collectors.toList()) :
-//                recommendRatingService.checkExistUser(userId)?
-                productService.productRecommendForUser(userId).stream().map(value -> new ProductItemDTOMapper().mapRow(value)).collect(Collectors.toList()));
+        List<ProductItemDTO> list = new ArrayList<>();
+
+        if (userId == 0 || !(ratingService.checkUserIsRated(userId) > 0)) {
+            list = productService.productTopRating((page - 1) * 10).stream().map(value -> new ProductItemDTOMapper().mapRow(value)).collect(Collectors.toList());
+        } else {
+            if (!recommendRatingService.checkExistUser(userId)) {
+                recommend_product_for_user(userId);
+            }
+            list = productService.productRecommendForUser(userId).stream().map(value -> new ProductItemDTOMapper().mapRow(value)).collect(Collectors.toList());
+        }
+
 
         long endTime = new Date().getTime();
         long difference = endTime - startTime;
@@ -106,6 +113,7 @@ public class ProductController {
             }
         }
 
+        cosineSimilarityService.removeAll();
         cosineSimilarityService.saveAll(cosSimilarities);
         return ResponseEntity.ok().body("done");
     }
@@ -113,8 +121,6 @@ public class ProductController {
     @GetMapping("/create-prediction-rating/{userId}")
     public ResponseEntity<RecommendRating> recommend_product_for_user(@PathVariable("userId") int user_id) {
         long startTime = new Date().getTime();
-
-
 
         List<Integer> list_users = ratingService.getUsersRated();
         List<Integer> list_product = ratingService.getProductsRated();
@@ -143,6 +149,7 @@ public class ProductController {
         List<Integer> list_pd_user_unrated = new ArrayList<>();
         divide_rated_unrated(listRatingNormalized, list_product, user_id, list_pd_user_rated, list_pd_user_unrated);
         StringBuilder listProductRS = new StringBuilder();
+        StringBuilder listProductRS_Show = new StringBuilder();
 
         list_pd_user_unrated.parallelStream().forEach(value -> {
             List<CosineSimilarity> list_cos_of_user = new ArrayList<>();
@@ -160,21 +167,28 @@ public class ProductController {
             double b = Math.abs(list_cos_of_user.get(0).getCosSimilarity()) + Math.abs(list_cos_of_user.get(1).getCosSimilarity());
 
             if (a / b > 0) {
-                mapPredictionProduct.put(value, a/b);
+                mapPredictionProduct.put(value, a / b);
             }
         });
 
-        mapPredictionProduct.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).limit(10).forEach(value->{
+        mapPredictionProduct.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).limit(10).forEach(value -> {
             listProductRS.append(value.getKey()).append("-");
+            listProductRS_Show.append(value.getKey()).append(" - ").append(value.getValue()).append(";");
         });
-        RecommendRating recommendRating = recommendRatingService.save(new RecommendRating(user_id, listProductRS.deleteCharAt(listProductRS.length() - 1).toString()));
+        if (!recommendRatingService.checkExistUser(user_id))
+            recommendRatingService.save(new RecommendRating(user_id, listProductRS.deleteCharAt(listProductRS.length() - 1).toString()));
+        else{
+            RecommendRating recommendRating = recommendRatingService.getById(user_id);
+            recommendRating.setProducts(listProductRS.toString());
+            recommendRatingService.save(recommendRating);
+        }
 
         long endTime = new Date().getTime();
         long difference = endTime - startTime;
         System.out.println("Elapsed time in milliseconds: " + difference);
         System.out.println("done");
 
-        return ResponseEntity.ok().body(recommendRating);
+        return ResponseEntity.ok().body(new RecommendRating(user_id, listProductRS_Show.toString()));
     }
 
     @GetMapping("/test-recommend-movie")

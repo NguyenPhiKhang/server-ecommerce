@@ -17,4 +17,8 @@ public class RecommendRatingService {
     public RecommendRating save(RecommendRating recommendRating){
         return recommendRatingRepository.save(recommendRating);
     }
+
+    public RecommendRating getById(int user_id){
+        return recommendRatingRepository.findByUserId(user_id);
+    }
 }

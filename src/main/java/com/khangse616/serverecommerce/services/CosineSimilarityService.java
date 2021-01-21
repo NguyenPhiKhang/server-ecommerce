@@ -25,4 +25,8 @@ public class CosineSimilarityService {
     public List<CosineSimilarity> getAll(){
         return cosineSimilarityRepository.findAll();
     }
+
+    public void removeAll(){
+        cosineSimilarityRepository.deleteAll();;
+    }
 }
