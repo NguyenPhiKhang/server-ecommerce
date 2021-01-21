@@ -1,10 +1,21 @@
 package com.khangse616.serverecommerce.dto.RecommendSystem;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.util.Objects;
 
+@Entity
+@Table(name = "cosine_similarity")
 public class CosineSimilarityDTO {
+    @Id
+    @Column(name = "row")
     private int row;
+    @Id
+    @Column(name = "column")
     private int column;
+    @Column(name = "similarity")
     private double similarity;
 
     public CosineSimilarityDTO() {
@@ -15,6 +26,7 @@ public class CosineSimilarityDTO {
         this.column = column;
         this.similarity = similarity;
     }
+
     public CosineSimilarityDTO(int row, int column) {
         this.row = row;
         this.column = column;
