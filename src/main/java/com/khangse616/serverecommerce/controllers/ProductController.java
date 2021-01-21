@@ -9,6 +9,7 @@ import com.khangse616.serverecommerce.dto.RecommendSystem.RecommendForUser;
 import com.khangse616.serverecommerce.mapper.ProductDetailMapper;
 import com.khangse616.serverecommerce.mapper.ProductItemDTOMapper;
 import com.khangse616.serverecommerce.mapper.RatingRSDTOMapper;
+import com.khangse616.serverecommerce.models.RecommendRating;
 import com.khangse616.serverecommerce.services.CosineSimilarityService;
 import com.khangse616.serverecommerce.services.ProductService;
 import com.khangse616.serverecommerce.services.RatingService;
@@ -110,8 +111,10 @@ public class ProductController {
     }
 
     @GetMapping("/create-prediction-rating/{userId}")
-    public ResponseEntity<List<RecommendForUser>> recommend_product_for_user(@PathVariable("userId") int user_id) {
+    public ResponseEntity<RecommendRating> recommend_product_for_user(@PathVariable("userId") int user_id) {
         long startTime = new Date().getTime();
+
+
 
         List<Integer> list_users = ratingService.getUsersRated();
         List<Integer> list_product = ratingService.getProductsRated();
@@ -134,13 +137,11 @@ public class ProductController {
         }
 
         List<CosineSimilarity> cosSimilarities = cosineSimilarityService.getAll();
-        List<RecommendForUser> recommendForUserList = new ArrayList<>();
-//
+        Map<Integer, Double> mapPredictionProduct = new HashMap<>();
 //        // Rating Prediction
         List<Integer> list_pd_user_rated = new ArrayList<>();
         List<Integer> list_pd_user_unrated = new ArrayList<>();
         divide_rated_unrated(listRatingNormalized, list_product, user_id, list_pd_user_rated, list_pd_user_unrated);
-        int size_unrated = list_pd_user_unrated.size();
         StringBuilder listProductRS = new StringBuilder();
 
         list_pd_user_unrated.parallelStream().forEach(value -> {
@@ -159,20 +160,21 @@ public class ProductController {
             double b = Math.abs(list_cos_of_user.get(0).getCosSimilarity()) + Math.abs(list_cos_of_user.get(1).getCosSimilarity());
 
             if (a / b > 0) {
-                listProductRS.append(value).append(" (").append((double) Math.round((a / b) * 100) / 100).append("), ");
+                mapPredictionProduct.put(value, a/b);
             }
         });
-        recommendForUserList.add(new RecommendForUser(user_id, listProductRS.toString()));
 
-        recommendForUserList.forEach(System.out::println);
-
+        mapPredictionProduct.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).limit(10).forEach(value->{
+            listProductRS.append(value.getKey()).append("-");
+        });
+        RecommendRating recommendRating = recommendRatingService.save(new RecommendRating(user_id, listProductRS.deleteCharAt(listProductRS.length() - 1).toString()));
 
         long endTime = new Date().getTime();
         long difference = endTime - startTime;
         System.out.println("Elapsed time in milliseconds: " + difference);
         System.out.println("done");
 
-        return ResponseEntity.ok().body(recommendForUserList);
+        return ResponseEntity.ok().body(recommendRating);
     }
 
     @GetMapping("/test-recommend-movie")
