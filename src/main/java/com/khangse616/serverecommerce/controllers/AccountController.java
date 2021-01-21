@@ -27,7 +27,7 @@ public class AccountController {
         return "done";
     }
 
-    @GetMapping("/account/login")
+    @PostMapping("/account/login")
     public ResponseEntity<Account> login(@RequestBody Account account){
         Account account1 = accountRepository.findByUsernameAndPassword(account.getUsername(), account.getPassword());
         return ResponseEntity.ok().body(account1);

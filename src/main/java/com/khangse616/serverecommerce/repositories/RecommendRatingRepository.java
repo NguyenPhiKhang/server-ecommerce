@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RecommendRatingRepository extends JpaRepository<RecommendRating, Integer> {
     RecommendRating findByUserId(int userId);
+    boolean existsByUserId(int userId);
 }

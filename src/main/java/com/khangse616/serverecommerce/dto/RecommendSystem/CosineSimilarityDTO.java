@@ -1,13 +1,11 @@
 package com.khangse616.serverecommerce.dto.RecommendSystem;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
 @Table(name = "cosine_similarity")
+@IdClass(CosineSimilarityId.class)
 public class CosineSimilarityDTO {
     @Id
     @Column(name = "row")
