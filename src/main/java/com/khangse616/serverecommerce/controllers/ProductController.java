@@ -122,6 +122,11 @@ public class ProductController {
     public ResponseEntity<RecommendRating> recommend_product_for_user(@PathVariable("userId") int user_id) {
         long startTime = new Date().getTime();
 
+        if(!(ratingService.checkUserIsRated(user_id) > 0)){
+            return ResponseEntity.ok().body(new RecommendRating(user_id, ""));
+        }
+
+
         List<Integer> list_users = ratingService.getUsersRated();
         List<Integer> list_product = ratingService.getProductsRated();
 
