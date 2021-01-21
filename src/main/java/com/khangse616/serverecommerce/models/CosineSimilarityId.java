@@ -1,4 +1,4 @@
-package com.khangse616.serverecommerce.dto.RecommendSystem;
+package com.khangse616.serverecommerce.models;
 
 import java.io.Serializable;
 

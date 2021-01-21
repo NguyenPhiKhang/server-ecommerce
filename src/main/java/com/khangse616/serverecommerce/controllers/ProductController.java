@@ -2,7 +2,7 @@ package com.khangse616.serverecommerce.controllers;
 
 import com.khangse616.serverecommerce.dto.ProductDetailDTO;
 import com.khangse616.serverecommerce.dto.ProductItemDTO;
-import com.khangse616.serverecommerce.dto.RecommendSystem.CosineSimilarityDTO;
+import com.khangse616.serverecommerce.models.CosineSimilarity;
 import com.khangse616.serverecommerce.dto.RecommendSystem.RatingRSDTO;
 import com.khangse616.serverecommerce.dto.RecommendSystem.AVGRatedProductDTO;
 import com.khangse616.serverecommerce.dto.RecommendSystem.RecommendForUser;
@@ -61,10 +61,124 @@ public class ProductController {
         return ResponseEntity.ok().body(list);
     }
 
-//    @GetMapping("/recommend/")
-
     @PostMapping("/recommend/create-cosine-similarity")
     public ResponseEntity<String> createCosineSimilarity() {
+        List<Integer> list_users = ratingService.getUsersRated();
+        List<Integer> list_product = ratingService.getProductsRated();
+
+        List<RatingRSDTO> listRatingRS = ratingService.getAll().stream().map(value -> new RatingRSDTOMapper().mapRow(value)).collect(Collectors.toList());
+
+        List<RatingRSDTO> listRatingNormalized = listRatingRS.stream().map(rt -> new RatingRSDTO(rt.getUserId(), rt.getProductId(), rt.getValue())).collect(Collectors.toList());
+
+        List<AVGRatedProductDTO> listAVG = ratingService.calcAVGRatedProduct();
+
+        int size_list_avg = listAVG.size();
+        int size_list_user = list_users.size();
+        for (int i = 0; i < size_list_avg; i++) {
+            int pd_id = list_product.get(i);
+            double avg_pd = listAVG.get(i).getAvgRated();
+            listRatingNormalized.parallelStream().filter(value -> value.getProductId() == pd_id).forEach(value -> {
+                value.setValue(value.getValue() - avg_pd);
+            });
+        }
+
+        List<CosineSimilarity> cosSimilarities = new ArrayList<>();
+
+        // calc cosine similarity
+        for (int i = size_list_avg - 1; i > 0; i--) {
+            int product_id1 = list_product.get(i);
+            List<RatingRSDTO> user_rated_product1 = calcUserRatedProduct(listRatingNormalized, product_id1);
+            for (int j = i - 1; j >= 0; j--) {
+                int product_id2 = list_product.get(j);
+                List<RatingRSDTO> user_rated_product2 = calcUserRatedProduct(listRatingNormalized, product_id2);
+
+                double pd1_dot_pd2 = p1_dot_p2(user_rated_product1, user_rated_product2);
+                double norm_pd1 = calc_norm(user_rated_product1);
+                double norm_pd2 = calc_norm(user_rated_product2);
+                double norm_pd1_mul_norm_pd2 = norm_pd1 * norm_pd2;
+//
+                double cosineSimilarity = norm_pd1_mul_norm_pd2 != 0.0 ? pd1_dot_pd2 / norm_pd1_mul_norm_pd2 : -1;
+//
+                CosineSimilarity a = new CosineSimilarity(product_id1, product_id2, cosineSimilarity);
+                cosSimilarities.add(a);
+                System.out.println("i: " + i + " - j: " + j);
+            }
+        }
+
+        cosineSimilarityService.saveAll(cosSimilarities);
+        return ResponseEntity.ok().body("done");
+    }
+
+    @GetMapping("/create-prediction-rating/{userId}")
+    public ResponseEntity<List<RecommendForUser>> recommend_product_for_user(@PathVariable("userId") int user_id) {
+        long startTime = new Date().getTime();
+
+        List<Integer> list_users = ratingService.getUsersRated();
+        List<Integer> list_product = ratingService.getProductsRated();
+
+        List<RatingRSDTO> listRatingRS = ratingService.getAll().stream().map(value -> new RatingRSDTOMapper().mapRow(value)).collect(Collectors.toList());
+
+        List<RatingRSDTO> listRatingNormalized = listRatingRS.stream().map(rt -> new RatingRSDTO(rt.getUserId(), rt.getProductId(), rt.getValue())).collect(Collectors.toList());
+
+        List<AVGRatedProductDTO> listAVG = ratingService.calcAVGRatedProduct();
+
+        // normalized utility matrix
+        System.out.println(listAVG.size());
+        int size_list_avg = listAVG.size();
+        for (int i = 0; i < size_list_avg; i++) {
+            int pd_id = list_product.get(i);
+            double avg_pd = listAVG.get(i).getAvgRated();
+            listRatingNormalized.parallelStream().filter(value -> value.getProductId() == pd_id).forEach(value -> {
+                value.setValue(value.getValue() - avg_pd);
+            });
+        }
+
+        List<CosineSimilarity> cosSimilarities = cosineSimilarityService.getAll();
+        List<RecommendForUser> recommendForUserList = new ArrayList<>();
+//
+//        // Rating Prediction
+        List<Integer> list_pd_user_rated = new ArrayList<>();
+        List<Integer> list_pd_user_unrated = new ArrayList<>();
+        divide_rated_unrated(listRatingNormalized, list_product, user_id, list_pd_user_rated, list_pd_user_unrated);
+        int size_unrated = list_pd_user_unrated.size();
+        StringBuilder listProductRS = new StringBuilder();
+
+        list_pd_user_unrated.parallelStream().forEach(value -> {
+            List<CosineSimilarity> list_cos_of_user = new ArrayList<>();
+            List<RatingRSDTO> list_normalize_of_user = new ArrayList<>();
+            list_cos_of_user = top_k_cosine_similarity_of_user(2, cosSimilarities, value, list_pd_user_rated);
+
+            list_normalize_of_user = top_k_normalized_corresponding_top_k_cosine_similarity(
+                    user_id, list_cos_of_user, listRatingNormalized, value);
+
+            double a = list_cos_of_user.get(0).getRow() == list_normalize_of_user.get(0).getProductId() || list_cos_of_user.get(0).getColumn() == list_normalize_of_user.get(0).getProductId() ?
+                    list_cos_of_user.get(0).getCosSimilarity() * list_normalize_of_user.get(0).getValue() +
+                            list_cos_of_user.get(1).getCosSimilarity() * list_normalize_of_user.get(1).getValue() :
+                    list_cos_of_user.get(0).getCosSimilarity() * list_normalize_of_user.get(1).getValue() +
+                            list_cos_of_user.get(1).getCosSimilarity() * list_normalize_of_user.get(0).getValue();
+            double b = Math.abs(list_cos_of_user.get(0).getCosSimilarity()) + Math.abs(list_cos_of_user.get(1).getCosSimilarity());
+
+            if (a / b > 0) {
+                listProductRS.append(value).append(" (").append((double) Math.round((a / b) * 100) / 100).append("), ");
+            }
+        });
+        recommendForUserList.add(new RecommendForUser(user_id, listProductRS.toString()));
+
+        recommendForUserList.forEach(System.out::println);
+
+
+        long endTime = new Date().getTime();
+        long difference = endTime - startTime;
+        System.out.println("Elapsed time in milliseconds: " + difference);
+        System.out.println("done");
+
+        return ResponseEntity.ok().body(recommendForUserList);
+    }
+
+    @GetMapping("/test-recommend-movie")
+    public ResponseEntity<List<RecommendForUser>> recommend_product_for_user() {
+        long startTime = new Date().getTime();
+
 //        List<Integer> list_users = ratingService.getUsersRated();
 //        List<Integer> list_product = ratingService.getProductsRated();
 
@@ -82,7 +196,6 @@ public class ProductController {
         list_product.add(2);
         list_product.add(3);
         list_product.add(4);
-
 //        List<RatingRSDTO> listRatingRS = ratingService.getAll().stream().map(value -> new RatingRSDTOMapper().mapRow(value)).collect(Collectors.toList());
         List<RatingRSDTO> listRatingRS = new ArrayList<>();
         listRatingRS.add(new RatingRSDTO(0, 0, 5.));
@@ -107,6 +220,8 @@ public class ProductController {
         listRatingRS.add(new RatingRSDTO(6, 2, 1.));
         listRatingRS.add(new RatingRSDTO(6, 3, 4.));
         listRatingRS.add(new RatingRSDTO(6, 4, 5.));
+
+
         List<RatingRSDTO> listRatingNormalized = listRatingRS.stream().map(rt -> new RatingRSDTO(rt.getUserId(), rt.getProductId(), rt.getValue())).collect(Collectors.toList());
 
 //        List<AVGRatedProductDTO> listAVG = ratingService.calcAVGRatedProduct();
@@ -117,116 +232,7 @@ public class ProductController {
         listAVG.add(new AVGRatedProductDTO(3, 19.0 / 6.0));
         listAVG.add(new AVGRatedProductDTO(4, 3.0));
 
-
-        int size_list_avg = listAVG.size();
-        int size_list_user = list_users.size();
-        for (int i = 0; i < size_list_avg; i++) {
-            int pd_id = list_product.get(i);
-            double avg_pd = listAVG.get(i).getAvgRated();
-            listRatingNormalized.parallelStream().filter(value -> value.getProductId() == pd_id).forEach(value -> {
-                value.setValue(value.getValue() - avg_pd);
-            });
-        }
-
-        List<CosineSimilarityDTO> cosSimilarities = new ArrayList<>();
-
-        // calc cosine similarity
-        for (int i = size_list_avg - 1; i > 0; i--) {
-            int product_id1 = list_product.get(i);
-//            List<RatingRSDTO> list_normalized1 = new ArrayList<>(listRatingNormalized);
-//            List<RatingRSDTO> user_rated_product1 = listRatingNormalized.stream().filter(value -> value.getProductId() == product_id1).collect(Collectors.toList());
-            List<RatingRSDTO> user_rated_product1 = calcUserRatedProduct(listRatingNormalized, product_id1);
-//            List<RatingRSDTO> list_normalized2 = new ArrayList<>(list_normalized1);
-            for (int j = i - 1; j >= 0; j--) {
-                int product_id2 = list_product.get(j);
-                List<RatingRSDTO> user_rated_product2 = calcUserRatedProduct(listRatingNormalized, product_id2);
-
-//                double pd1_dot_pd2 = user_rated_product1.stream().map(value -> user_rated_product2.stream().filter(s -> s.getUserId() == value.getUserId()).findFirst().
-//                        map(ratingRSDTO -> (value.getValue() * ratingRSDTO.getValue())).orElse(0.0)).reduce(0.0, Double::sum);
-                double pd1_dot_pd2 = p1_dot_p2(user_rated_product1, user_rated_product2);
-//                double square_root_pd1 = Math.sqrt(user_rated_product1.stream().filter(value -> value.getValue() != 0.0).map(value -> Math.pow(value.getValue(), 2)).mapToDouble(Double::doubleValue).sum());
-//                double square_root_pd2 = Math.sqrt(user_rated_product2.stream().filter(value -> value.getValue() != 0.0).map(value -> Math.pow(value.getValue(), 2)).mapToDouble(Double::doubleValue).sum());
-                double norm_pd1 = calc_norm(user_rated_product1);
-                double norm_pd2 = calc_norm(user_rated_product2);
-                double norm_pd1_mul_norm_pd2 = norm_pd1 * norm_pd2;
-//
-                double cosineSimilarity = norm_pd1_mul_norm_pd2 != 0.0 ? pd1_dot_pd2 / norm_pd1_mul_norm_pd2 : -1;
-//
-                CosineSimilarityDTO a = new CosineSimilarityDTO(product_id1, product_id2, cosineSimilarity);
-//                System.out.println(a);
-                cosSimilarities.add(a);
-                System.out.println("i: " + i + " - j: " + j);
-//                System.out.println(cosineSimilarity);
-            }
-        }
-
-        cosineSimilarityService.saveAll(cosSimilarities);
-
-        return ResponseEntity.ok().body("done");
-    }
-
-    @GetMapping("/test-recommend")
-    public void recommend_product_for_user() {
-        long startTime = new Date().getTime();
-
-//        int n_users = ratingService.numberUserInRatings();
-//        int n_products = ratingService.numberProductInRatings();
-
-        List<Integer> list_users = ratingService.getUsersRated();
-        List<Integer> list_product = ratingService.getProductsRated();
-
-//        List<Integer> list_users = new ArrayList<>();
-//        list_users.add(0);
-//        list_users.add(1);
-//        list_users.add(2);
-//        list_users.add(3);
-//        list_users.add(4);
-//        list_users.add(5);
-//        list_users.add(6);
-//        List<Integer> list_product = new ArrayList<>();
-//        list_product.add(0);
-//        list_product.add(1);
-//        list_product.add(2);
-//        list_product.add(3);
-//        list_product.add(4);
-        List<RatingRSDTO> listRatingRS = ratingService.getAll().stream().map(value -> new RatingRSDTOMapper().mapRow(value)).collect(Collectors.toList());
-//        List<RatingRSDTO> listRatingRS = new ArrayList<>();
-//        listRatingRS.add(new RatingRSDTO(0, 0, 5.));
-//        listRatingRS.add(new RatingRSDTO(0, 1, 4.));
-//        listRatingRS.add(new RatingRSDTO(0, 3, 2.));
-//        listRatingRS.add(new RatingRSDTO(0, 4, 2.));
-//        listRatingRS.add(new RatingRSDTO(1, 0, 5.));
-//        listRatingRS.add(new RatingRSDTO(1, 2, 4.));
-//        listRatingRS.add(new RatingRSDTO(1, 3, 2.));
-//        listRatingRS.add(new RatingRSDTO(1, 4, 1.));
-//        listRatingRS.add(new RatingRSDTO(2, 0, 2.));
-//        listRatingRS.add(new RatingRSDTO(2, 2, 1.));
-//        listRatingRS.add(new RatingRSDTO(2, 3, 3.));
-//        listRatingRS.add(new RatingRSDTO(2, 4, 4.));
-//        listRatingRS.add(new RatingRSDTO(3, 0, 1.));
-//        listRatingRS.add(new RatingRSDTO(3, 1, 1.));
-//        listRatingRS.add(new RatingRSDTO(3, 3, 4.));
-//        listRatingRS.add(new RatingRSDTO(4, 0, 1.));
-//        listRatingRS.add(new RatingRSDTO(4, 3, 4.));
-//        listRatingRS.add(new RatingRSDTO(5, 1, 2.));
-//        listRatingRS.add(new RatingRSDTO(5, 2, 1.));
-//        listRatingRS.add(new RatingRSDTO(6, 2, 1.));
-//        listRatingRS.add(new RatingRSDTO(6, 3, 4.));
-//        listRatingRS.add(new RatingRSDTO(6, 4, 5.));
-
-
-        List<RatingRSDTO> listRatingNormalized = listRatingRS.stream().map(rt -> new RatingRSDTO(rt.getUserId(), rt.getProductId(), rt.getValue())).collect(Collectors.toList());
-
-        List<AVGRatedProductDTO> listAVG = ratingService.calcAVGRatedProduct();
-//        List<AVGRatedProductDTO> listAVG = new ArrayList<>();
-//        listAVG.add(new AVGRatedProductDTO(0, 2.8));
-//        listAVG.add(new AVGRatedProductDTO(1, 7.0 / 3.0));
-//        listAVG.add(new AVGRatedProductDTO(2, 1.75));
-//        listAVG.add(new AVGRatedProductDTO(3, 19.0 / 6.0));
-//        listAVG.add(new AVGRatedProductDTO(4, 3.0));
-
         // normalized utility matrix
-        System.out.println(listAVG.size());
         int size_list_avg = listAVG.size();
         int size_list_user = list_users.size();
         for (int i = 0; i < size_list_avg; i++) {
@@ -250,7 +256,7 @@ public class ProductController {
             });
         }
 
-        List<CosineSimilarityDTO> cosSimilarities = new ArrayList<>();
+        List<CosineSimilarity> cosSimilarities = new ArrayList<>();
 
         // calc cosine similarity
         for (int i = size_list_avg - 1; i > 0; i--) {
@@ -274,7 +280,7 @@ public class ProductController {
 //
                 double cosineSimilarity = norm_pd1_mul_norm_pd2 != 0.0 ? pd1_dot_pd2 / norm_pd1_mul_norm_pd2 : -1;
 //
-                CosineSimilarityDTO a = new CosineSimilarityDTO(product_id1, product_id2, cosineSimilarity);
+                CosineSimilarity a = new CosineSimilarity(product_id1, product_id2, cosineSimilarity);
 //                System.out.println(a);
                 cosSimilarities.add(a);
                 System.out.println("i: " + i + " - j: " + j);
@@ -282,18 +288,18 @@ public class ProductController {
             }
         }
 
-//        for (CosineSimilarityDTO cs : cosSimilarities) {
-//            System.out.println(cs.toString());
-//        }
+        for (CosineSimilarity cs : cosSimilarities) {
+            System.out.println(cs.toString());
+        }
 
-//        cosSimilarities.forEach(System.out::println);
+        cosSimilarities.forEach(System.out::println);
 
         List<RecommendForUser> recommendForUserList = new ArrayList<>();
 //
 //        // Rating Prediction
         List<Integer> list_pd_user_rated = new ArrayList<>();
         List<Integer> list_pd_user_unrated = new ArrayList<>();
-//        List<CosineSimilarityDTO> list_cos_of_user = new ArrayList<>();
+//        List<CosineSimilarity> list_cos_of_user = new ArrayList<>();
 //        List<RatingRSDTO> list_normalize_of_user = new ArrayList<>();
         for (int i = 0; i < size_list_user; i++) {
             int user_id = list_users.get(i);
@@ -326,25 +332,23 @@ public class ProductController {
 //                if (a / b > 0) {
 //                    listProductRS.append(pd_unrated_id).append(" (").append((double) Math.round((a / b) * 100) / 100).append("), ");
 //                }
-//            }
+//        }
 
             list_pd_user_unrated.parallelStream().forEach(value -> {
 //                int pd_unrated_id = list_pd_user_unrated.get(j);
-                List<CosineSimilarityDTO> list_cos_of_user = new ArrayList<>();
+                List<CosineSimilarity> list_cos_of_user = new ArrayList<>();
                 List<RatingRSDTO> list_normalize_of_user = new ArrayList<>();
                 list_cos_of_user = top_k_cosine_similarity_of_user(2, cosSimilarities, value, list_pd_user_rated);
 
-                System.out.println("------------------------giai doan 2---------------------------");
                 list_normalize_of_user = top_k_normalized_corresponding_top_k_cosine_similarity(
                         user_id, list_cos_of_user, listRatingNormalized, value);
-                System.out.println("------------------------giai doan 3---------------------------");
 
                 double a = list_cos_of_user.get(0).getRow() == list_normalize_of_user.get(0).getProductId() || list_cos_of_user.get(0).getColumn() == list_normalize_of_user.get(0).getProductId() ?
-                        list_cos_of_user.get(0).getSimilarity() * list_normalize_of_user.get(0).getValue() +
-                                list_cos_of_user.get(1).getSimilarity() * list_normalize_of_user.get(1).getValue() :
-                        list_cos_of_user.get(0).getSimilarity() * list_normalize_of_user.get(1).getValue() +
-                                list_cos_of_user.get(1).getSimilarity() * list_normalize_of_user.get(0).getValue();
-                double b = Math.abs(list_cos_of_user.get(0).getSimilarity()) + Math.abs(list_cos_of_user.get(1).getSimilarity());
+                        list_cos_of_user.get(0).getCosSimilarity() * list_normalize_of_user.get(0).getValue() +
+                                list_cos_of_user.get(1).getCosSimilarity() * list_normalize_of_user.get(1).getValue() :
+                        list_cos_of_user.get(0).getCosSimilarity() * list_normalize_of_user.get(1).getValue() +
+                                list_cos_of_user.get(1).getCosSimilarity() * list_normalize_of_user.get(0).getValue();
+                double b = Math.abs(list_cos_of_user.get(0).getCosSimilarity()) + Math.abs(list_cos_of_user.get(1).getCosSimilarity());
 
 //                System.out.println(a / b);
                 if (a / b > 0) {
@@ -353,7 +357,7 @@ public class ProductController {
             });
             recommendForUserList.add(new RecommendForUser(user_id, listProductRS.toString()));
 
-            System.out.println("i: " + i + "/" + size_list_user);
+//        System.out.println("i: " + i + "/" + size_list_user);
         }
 //
         recommendForUserList.forEach(System.out::println);
@@ -363,6 +367,8 @@ public class ProductController {
         long difference = endTime - startTime;
         System.out.println("Elapsed time in milliseconds: " + difference);
         System.out.println("done");
+
+        return ResponseEntity.ok().body(recommendForUserList);
     }
 
     private List<RatingRSDTO> calcUserRatedProduct(List<RatingRSDTO> list, int pd) {
@@ -420,13 +426,13 @@ public class ProductController {
         }
     }
 
-    private List<CosineSimilarityDTO> top_k_cosine_similarity_of_user(int k, List<CosineSimilarityDTO> list, int pd_unrated_id, List<Integer> list_pd_user_rated) {
-//        List<CosineSimilarityDTO> cos_list = new ArrayList<>();
+    private List<CosineSimilarity> top_k_cosine_similarity_of_user(int k, List<CosineSimilarity> list, int pd_unrated_id, List<Integer> list_pd_user_rated) {
+//        List<CosineSimilarity> cos_list = new ArrayList<>();
 //        int size_list = list.size();
         return list.stream().filter(cos -> (cos.getRow() == pd_unrated_id && list_pd_user_rated.contains(cos.getColumn())) ||
                 (list_pd_user_rated.contains(cos.getRow()) && cos.getColumn() == pd_unrated_id)).limit(k).collect(Collectors.toList());
 //        for (int i = 0; i < size_list; i++) {
-//            CosineSimilarityDTO cos = list.get(i);
+//            CosineSimilarity cos = list.get(i);
 //            if ((cos.getRow() == pd_unrated_id && list_pd_user_rated.contains(cos.getColumn())) ||
 //                    (list_pd_user_rated.contains(cos.getRow()) && cos.getColumn() == pd_unrated_id)) {
 //                cos_list.add(cos);
@@ -435,19 +441,19 @@ public class ProductController {
 //
 ////        cosSimilarities.parallelStream().
 ////                filter(value -> (value.getRow() == pd_unrated_id && list_pd_user_rated.contains(value.getColumn())) || (list_pd_user_rated.contains(value.getRow()) && value.getColumn() == pd_unrated_id)).
-////                sorted(Comparator.comparingDouble(CosineSimilarityDTO::getSimilarity).reversed()).
+////                sorted(Comparator.comparingDouble(CosineSimilarity::getSimilarity).reversed()).
 ////                limit(2).collect(Collectors.toList());
 //
-//        return cos_list.stream().sorted(Comparator.comparing(CosineSimilarityDTO::getSimilarity)).limit(k).collect(Collectors.toList());
+//        return cos_list.stream().sorted(Comparator.comparing(CosineSimilarity::getSimilarity)).limit(k).collect(Collectors.toList());
     }
 
-    private List<RatingRSDTO> top_k_normalized_corresponding_top_k_cosine_similarity(int user_id, List<CosineSimilarityDTO> list_cos_of_user, List<RatingRSDTO> listRatingNormalized, int pd_unrated_id) {
+    private List<RatingRSDTO> top_k_normalized_corresponding_top_k_cosine_similarity(int user_id, List<CosineSimilarity> list_cos_of_user, List<RatingRSDTO> listRatingNormalized, int pd_unrated_id) {
 //        List<RatingRSDTO> list = new ArrayList<>();
 //        int size_normalized = listRatingNormalized.size();
 //        for (int i = 0; i < size_normalized; i++) {
 //            RatingRSDTO nm = listRatingNormalized.get(i);
-//            if (nm.getUserId() == user_id && (list_cos_of_user.contains(new CosineSimilarityDTO(pd_unrated_id, nm.getProductId())) ||
-//                    list_cos_of_user.contains(new CosineSimilarityDTO(nm.getProductId(), pd_unrated_id)))) {
+//            if (nm.getUserId() == user_id && (list_cos_of_user.contains(new CosineSimilarity(pd_unrated_id, nm.getProductId())) ||
+//                    list_cos_of_user.contains(new CosineSimilarity(nm.getProductId(), pd_unrated_id)))) {
 //                list.add(nm);
 //                if (list.size() == 2) return list;
 //            }
@@ -456,8 +462,8 @@ public class ProductController {
         return listRatingNormalized.stream().filter(nm -> nm.getUserId() == user_id && ((list_cos_of_user.stream().filter(value -> value.getRow() == pd_unrated_id && value.getColumn() == nm.getProductId()).findAny().orElse(null) != null) ||
                 list_cos_of_user.stream().filter(value -> value.getRow() == nm.getProductId() && value.getColumn() == pd_unrated_id).findAny().orElse(null) != null)).limit(2).collect(Collectors.toList());
 //        listRatingNormalized.parallelStream().
-//                filter(value -> value.getUserId() == user_id && (list_cos_of_user.contains(new CosineSimilarityDTO(pd_unrated_id, value.getProductId())) ||
-//                        list_cos_of_user.contains(new CosineSimilarityDTO(value.getProductId(), pd_unrated_id)))).
+//                filter(value -> value.getUserId() == user_id && (list_cos_of_user.contains(new CosineSimilarity(pd_unrated_id, value.getProductId())) ||
+//                        list_cos_of_user.contains(new CosineSimilarity(value.getProductId(), pd_unrated_id)))).
 //                limit(2).collect(Collectors.toList());
     }
 

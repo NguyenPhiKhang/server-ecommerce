@@ -1,33 +1,43 @@
-package com.khangse616.serverecommerce.dto.RecommendSystem;
+package com.khangse616.serverecommerce.models;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
 @Table(name = "cosine_similarity")
 @IdClass(CosineSimilarityId.class)
-public class CosineSimilarityDTO {
+public class CosineSimilarity implements Serializable {
     @Id
-    @Column(name = "row")
+    @Column(name = "row_product_id")
     private int row;
     @Id
-    @Column(name = "column")
+    @Column(name = "column_product_id")
     private int column;
+
     @Column(name = "similarity")
-    private double similarity;
+    private double cosSimilarity;
 
-    public CosineSimilarityDTO() {
+    public CosineSimilarity() {
     }
 
-    public CosineSimilarityDTO(int row, int column, double similarity) {
+    public CosineSimilarity(int row, int column, double cosSimilarity) {
         this.row = row;
         this.column = column;
-        this.similarity = similarity;
+        this.cosSimilarity = cosSimilarity;
     }
 
-    public CosineSimilarityDTO(int row, int column) {
+    public CosineSimilarity(int row, int column) {
         this.row = row;
         this.column = column;
+    }
+
+    public double getCosSimilarity() {
+        return cosSimilarity;
+    }
+
+    public void setCosSimilarity(double cosSimilarity) {
+        this.cosSimilarity = cosSimilarity;
     }
 
     public int getRow() {
@@ -46,34 +56,27 @@ public class CosineSimilarityDTO {
         this.column = column;
     }
 
-    public double getSimilarity() {
-        return similarity;
-    }
-
-    public void setSimilarity(double similarity) {
-        this.similarity = similarity;
-    }
 
     @Override
     public String toString() {
         return "CosineSimilarityDTO{" +
                 "row=" + row +
                 ", column=" + column +
-                ", similarity=" + similarity +
+                ", similarity=" + cosSimilarity +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CosineSimilarityDTO)) return false;
-        CosineSimilarityDTO that = (CosineSimilarityDTO) o;
+        if (!(o instanceof CosineSimilarity)) return false;
+        CosineSimilarity that = (CosineSimilarity) o;
         return getRow() == that.getRow() &&
                 getColumn() == that.getColumn();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getRow(), getColumn(), getSimilarity());
+        return Objects.hash(getRow(), getColumn(), getCosSimilarity());
     }
 }
