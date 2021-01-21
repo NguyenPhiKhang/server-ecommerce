@@ -9,13 +9,17 @@ import java.util.Set;
 
 @Entity
 @Table(name = "images")
+
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Image implements Serializable {
     @Id
+    @JsonIgnore
     private String id;
     @Column(name = "name")
+    @JsonIgnore
     private String name;
     @Column(name = "type")
+    @JsonIgnore
     private String type;
     @Lob
     @Column(name = "data")

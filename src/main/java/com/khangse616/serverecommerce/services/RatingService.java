@@ -70,22 +70,27 @@ public class RatingService {
         List<Rating> list_ratings = new ArrayList<>();
         List<RatingStar> ratingStarList = new ArrayList<>();
         int q = 100;
-        for (int j = 0;j<size_product;j++) {
-            System.out.println("-----------------product thu: "+j+" ------------------------");
+        for (int j = 0; j < size_product; j++) {
+            System.out.println("-----------------product thu: " + j + " ------------------------");
             Product pd = products.get(j);
-            int rating_rd = rd.nextInt(401) + q;
-            q*=-1;
-            int total_rating = rating_rd<0?0: Math.min(rating_rd, 500);
-            System.out.println("tong rating: "+total_rating);
-            int star1 =0; int star2=0; int star3=0; int star4=0; int star5=0;
+            int rating_rd = rd.nextInt(501);
+            rating_rd = q > 0 ? rating_rd : rating_rd + q;
+            q *= -1;
+            int total_rating = rating_rd < 0 ? 0 : Math.min(rating_rd, 500);
+            System.out.println("tong rating: " + total_rating);
+            int star1 = 0;
+            int star2 = 0;
+            int star3 = 0;
+            int star4 = 0;
+            int star5 = 0;
             for (int i = 0; i < total_rating; i++) {
                 int idRating;
                 do {
                     idRating = 10000000 + rd.nextInt(6000001);
                 } while (ratingRepository.existsById(idRating));
 
-                int star = 1 + rd.nextInt(8);
-                switch (star){
+                int star = 1 + rd.nextInt(13);
+                switch (star) {
                     case 1:
                         star1++;
                         break;
@@ -113,7 +118,7 @@ public class RatingService {
 
                 Rating rating = new Rating();
                 rating.setId(idRating);
-                rating.setStar(star);
+                rating.setStar(Math.min(star, 5));
                 rating.setUser(user);
                 rating.setProduct(pd);
                 rating.setTimeCreated(new Timestamp(System.currentTimeMillis()));

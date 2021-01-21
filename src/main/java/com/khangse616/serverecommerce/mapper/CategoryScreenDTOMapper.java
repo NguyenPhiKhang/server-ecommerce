@@ -13,8 +13,8 @@ public class CategoryScreenDTOMapper implements RowMapper<CategoryScreenDTO, Cat
             categoryScreenDTO.setName(category.getName());
             categoryScreenDTO.setLevel(category.getLevel());
             categoryScreenDTO.setCategoryPath(category.getCategoryPath());
-            categoryScreenDTO.setIcon(ImageUtil.addressImage(category.getIcon()));
-
+//            categoryScreenDTO.setIcon(ImageUtil.addressImage(category.getIcon()));
+            categoryScreenDTO.setIcon(category.getIcon());
             return categoryScreenDTO;
         }catch (Exception ex){
             return null;
