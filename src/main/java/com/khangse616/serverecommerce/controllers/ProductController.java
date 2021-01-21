@@ -9,6 +9,7 @@ import com.khangse616.serverecommerce.dto.RecommendSystem.RecommendForUser;
 import com.khangse616.serverecommerce.mapper.ProductDetailMapper;
 import com.khangse616.serverecommerce.mapper.ProductItemDTOMapper;
 import com.khangse616.serverecommerce.mapper.RatingRSDTOMapper;
+import com.khangse616.serverecommerce.models.Rating;
 import com.khangse616.serverecommerce.models.RecommendRating;
 import com.khangse616.serverecommerce.services.CosineSimilarityService;
 import com.khangse616.serverecommerce.services.ProductService;
@@ -184,7 +185,7 @@ public class ProductController {
             recommendRatingService.save(new RecommendRating(user_id, listProductRS.deleteCharAt(listProductRS.length() - 1).toString()));
         else{
             RecommendRating recommendRating = recommendRatingService.getById(user_id);
-            recommendRating.setProducts(listProductRS.toString());
+            recommendRating.setProducts(listProductRS.deleteCharAt(listProductRS.length() - 1).toString());
             recommendRatingService.save(recommendRating);
         }
 
@@ -195,6 +196,11 @@ public class ProductController {
 
         return ResponseEntity.ok().body(new RecommendRating(user_id, listProductRS_Show.toString()));
     }
+
+//    @PostMapping("/product/{productId}/{userId}/rating")
+//    public ResponseEntity<Rating> ratingProduct(@RequestBody Rating rating, @PathVariable("productId") int product_id, @PathVariable("userId") int user_id){
+//
+//    }
 
     @GetMapping("/test-recommend-movie")
     public ResponseEntity<List<RecommendForUser>> recommend_product_for_user() {
