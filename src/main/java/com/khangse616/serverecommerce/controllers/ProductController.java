@@ -2,23 +2,19 @@ package com.khangse616.serverecommerce.controllers;
 
 import com.khangse616.serverecommerce.dto.ProductDetailDTO;
 import com.khangse616.serverecommerce.dto.ProductItemDTO;
-import com.khangse616.serverecommerce.models.CosineSimilarity;
+import com.khangse616.serverecommerce.models.*;
 import com.khangse616.serverecommerce.dto.RecommendSystem.RatingRSDTO;
 import com.khangse616.serverecommerce.dto.RecommendSystem.AVGRatedProductDTO;
 import com.khangse616.serverecommerce.dto.RecommendSystem.RecommendForUser;
 import com.khangse616.serverecommerce.mapper.ProductDetailMapper;
 import com.khangse616.serverecommerce.mapper.ProductItemDTOMapper;
 import com.khangse616.serverecommerce.mapper.RatingRSDTOMapper;
-import com.khangse616.serverecommerce.models.Rating;
-import com.khangse616.serverecommerce.models.RecommendRating;
-import com.khangse616.serverecommerce.services.CosineSimilarityService;
-import com.khangse616.serverecommerce.services.ProductService;
-import com.khangse616.serverecommerce.services.RatingService;
-import com.khangse616.serverecommerce.services.RecommendRatingService;
+import com.khangse616.serverecommerce.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +32,12 @@ public class ProductController {
 
     @Autowired
     private RecommendRatingService recommendRatingService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private RatingStarService ratingStarService;
 
     @GetMapping("/product/{id}")
     public ResponseEntity<ProductDetailDTO> getProductById(@PathVariable int id) {
@@ -116,6 +118,7 @@ public class ProductController {
 
         cosineSimilarityService.removeAll();
         cosineSimilarityService.saveAll(cosSimilarities);
+        recommendRatingService.removeAll();
         return ResponseEntity.ok().body("done");
     }
 
@@ -123,7 +126,7 @@ public class ProductController {
     public ResponseEntity<RecommendRating> recommend_product_for_user(@PathVariable("userId") int user_id) {
         long startTime = new Date().getTime();
 
-        if(!(ratingService.checkUserIsRated(user_id) > 0)){
+        if (!(ratingService.checkUserIsRated(user_id) > 0)) {
             return ResponseEntity.ok().body(new RecommendRating(user_id, ""));
         }
 
@@ -183,7 +186,7 @@ public class ProductController {
         });
         if (!recommendRatingService.checkExistUser(user_id))
             recommendRatingService.save(new RecommendRating(user_id, listProductRS.deleteCharAt(listProductRS.length() - 1).toString()));
-        else{
+        else {
             RecommendRating recommendRating = recommendRatingService.getById(user_id);
             recommendRating.setProducts(listProductRS.deleteCharAt(listProductRS.length() - 1).toString());
             recommendRatingService.save(recommendRating);
@@ -197,10 +200,58 @@ public class ProductController {
         return ResponseEntity.ok().body(new RecommendRating(user_id, listProductRS_Show.toString()));
     }
 
-//    @PostMapping("/product/{productId}/{userId}/rating")
-//    public ResponseEntity<Rating> ratingProduct(@RequestBody Rating rating, @PathVariable("productId") int product_id, @PathVariable("userId") int user_id){
-//
-//    }
+    @PostMapping("/product/{productId}/{userId}/rating")
+    public ResponseEntity<Rating> ratingProduct(@RequestBody Rating rating, @PathVariable("productId") int product_id, @PathVariable("userId") int user_id) {
+        Random rd = new Random();
+        int idRating;
+        do {
+            idRating = 10000000 + rd.nextInt(6000001);
+        } while (ratingService.checkUserIsRated(idRating) > 0);
+
+        Product pd = productService.findProductById(product_id);
+        Rating new_rating = new Rating();
+        new_rating.setId(idRating);
+        new_rating.setStar(rating.getStar());
+        new_rating.setComment(rating.getComment());
+        new_rating.setUser(userService.getUser(user_id));
+        new_rating.setProduct(pd);
+        new_rating.setTimeCreated(new Timestamp(System.currentTimeMillis()));
+        new_rating.setTimeUpdated(new Timestamp(System.currentTimeMillis()));
+
+        RatingStar ratingStar = ratingStarService.getRatingStarById(pd.getRatingStar().getId());
+        int rt_star = rating.getStar();
+        switch (rt_star) {
+            case 1:
+                ratingStar.setStar1(ratingStar.getStar1() + 1);
+                break;
+            case 2:
+                ratingStar.setStar2(ratingStar.getStar2() + 1);
+                break;
+            case 3:
+                ratingStar.setStar3(ratingStar.getStar3() + 1);
+                break;
+            case 4:
+                ratingStar.setStar4(ratingStar.getStar4() + 1);
+                break;
+            default:
+                ratingStar.setStar5(ratingStar.getStar5() + 1);
+                break;
+
+        }
+
+
+        new_rating = ratingService.save(new_rating);
+        ratingStarService.save(ratingStar);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                createCosineSimilarity();
+            }
+        }).start();
+
+        return ResponseEntity.ok().body(new_rating);
+    }
 
     @GetMapping("/test-recommend-movie")
     public ResponseEntity<List<RecommendForUser>> recommend_product_for_user() {

@@ -21,4 +21,8 @@ public class RecommendRatingService {
     public RecommendRating getById(int user_id){
         return recommendRatingRepository.findByUserId(user_id);
     }
+
+    public void removeAll(){
+        recommendRatingRepository.deleteAll();
+    }
 }

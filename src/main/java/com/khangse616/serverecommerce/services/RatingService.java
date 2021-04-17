@@ -168,4 +168,8 @@ public class RatingService {
 //            }
 //        }
     }
+
+    public Rating save(Rating rating){
+        return ratingRepository.save(rating);
+    }
 }
